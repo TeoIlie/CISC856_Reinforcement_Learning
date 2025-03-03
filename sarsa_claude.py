@@ -129,20 +129,20 @@ def visualize_policy(env, Q):
 
     for row in range(env.rows):
         for col in range(env.cols):
-            if (row, col) == env.start_state:
-                policy_grid[row, col] = "S"
-            elif (row, col) == env.goal_state:
+            if (row, col) == env.goal_state:
                 policy_grid[row, col] = "G"
+            # elif (row, col) == env.start_state:
+            #     policy_grid[row, col] = "S"
             else:
                 action = policy[row, col]
-                if action == 0:  # left
-                    policy_grid[row, col] = "←"
+                if action == 0:  # up
+                    policy_grid[row, col] = "↑"
                 elif action == 1:  # down
                     policy_grid[row, col] = "↓"
-                elif action == 2:  # right
+                elif action == 2:  # left
+                    policy_grid[row, col] = "←"
+                elif action == 3:  # right
                     policy_grid[row, col] = "→"
-                elif action == 3:  # up
-                    policy_grid[row, col] = "↑"
 
     # Mark wind strengths at the bottom
     wind_str = ""
