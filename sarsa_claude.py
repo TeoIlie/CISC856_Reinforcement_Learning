@@ -1,16 +1,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 
 class WindyGridworld:
+    """WindyGridworld defines an environment for an agent according
+    to Sutton & Barto pg. 130"""
+
     def __init__(self):
         # Grid size 7 x 10
         self.rows = 7
         self.cols = 10
 
+        # Reward always -1
+        self.reward = -1
+
         # Start, goal positions
         self.start_state = (3, 0)
         self.goal_state = (3, 7)
+
+        # Current position
+        self.state = self.start_state
 
         # Upward wind strength for each column
         self.wind = [0, 0, 0, 1, 1, 1, 2, 2, 1, 0]
@@ -20,41 +30,52 @@ class WindyGridworld:
         self.num_actions = len(self.actions)
 
     def reset(self):
-        # Reset to starting state
+        # Reset to start state
+        self.state = self.start_state
         return self.start_state
 
-    def step(self, state, action):
-        # Extract current position
-        row, col = state
+    def step(self, action):
+        """step function takes an action and applies it to the agent,
+        given wind and that the agent cannot go outside the gridworld."""
 
-        # Get action movement
-        d_col, d_row = self.actions[action]
+        row, col = self.state
 
-        # Apply action
-        new_row = row + d_row
-        new_col = col + d_col
+        row_move, col_move = self.actions[action]
 
-        # Apply wind effect (note that wind effect is upward, so it decreases row)
-        new_row = new_row - self.wind[col]
+        next_row = row + row_move
+        next_col = col + col_move
 
-        # Ensure we stay within grid boundaries
-        new_row = max(0, min(new_row, self.rows - 1))
-        new_col = max(0, min(new_col, self.cols - 1))
+        # Account for wind effect
+        next_row = next_row - self.wind[col]
 
-        # Create new state
-        new_state = (new_row, new_col)
+        # Stay within the gridworld
+        next_row = max(0, min(next_row, self.rows - 1))
+        next_col = max(0, min(next_col, self.cols - 1))
 
-        # Reward is -1 for each step until reaching the goal
-        reward = -1
+        next_state = (next_row, next_col)
 
-        # Check if we've reached the goal
-        done = new_state == self.goal_state
+        # Check if goal state reached
+        if next_state == self.goal_state:
+            done = True
+        else:
+            done = False
 
-        return new_state, reward, done
+        self.state = next_state
+        return next_state, self.reward, done
 
 
-def sarsa(env, episodes=500, alpha=0.5, gamma=1.0, epsilon=0.1):
-    # Initialize Q-table with zeros
+def epsilon_greedy_policy(Q, state, epsilon, num_actions):
+    if random.uniform(0, 1) < epsilon:
+        # Random action
+        return random.randint(0, num_actions - 1)
+    else:
+        # Greedy action
+        return np.argmax(Q[state[0], state[1]])
+
+
+def sarsa(env, episodes, alpha, gamma, epsilon):
+    """Use Sarsa control algorithm for given parameter values."""
+    # Q hold all values for (row, col, action) triplets
     Q = np.zeros((env.rows, env.cols, env.num_actions))
 
     # Store total rewards and steps per episode for plotting
@@ -62,51 +83,39 @@ def sarsa(env, episodes=500, alpha=0.5, gamma=1.0, epsilon=0.1):
     steps_per_episode = np.zeros(episodes)
 
     for episode in range(episodes):
-        # Reset environment
+        # Reset gridworld environment
         state = env.reset()
         total_reward = 0
         step_count = 0
         done = False
 
         # Choose initial action using epsilon-greedy
-        if np.random.random() < epsilon:
-            action = np.random.randint(env.num_actions)
-        else:
-            action = np.argmax(Q[state[0], state[1], :])
+        action = epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
 
         # Continue until reaching the goal
         while not done:
             # Take action, observe new state and reward
-            next_state, reward, done = env.step(state, action)
+            next_state, reward, done = env.step(action)
             total_reward += reward
             step_count += 1
 
-            # Choose next action using epsilon-greedy
-            if np.random.random() < epsilon:
-                next_action = np.random.randint(env.num_actions)
-            else:
-                next_action = np.argmax(Q[next_state[0], next_state[1], :])
+            # Choose next action with epsilon-greedy policy
+            next_action = epsilon_greedy_policy(Q, next_state, epsilon, env.num_actions)
 
-            # SARSA update
+            # Sarsa update rule
             Q[state[0], state[1], action] += alpha * (
                 reward
                 + gamma * Q[next_state[0], next_state[1], next_action]
                 - Q[state[0], state[1], action]
             )
 
-            # Update state and action for next iteration
+            # Move to next time step
             state = next_state
             action = next_action
 
         # Record metrics for this episode
         total_rewards[episode] = total_reward
         steps_per_episode[episode] = step_count
-
-        # Print progress every 10 episodes
-        if (episode + 1) % 10 == 0:
-            print(
-                f"Episode {episode+1}: Steps = {step_count}, Total Reward = {total_reward}"
-            )
 
     return Q, total_rewards, steps_per_episode
 
@@ -186,14 +195,14 @@ def plot_learning_curve(total_rewards, steps_per_episode):
     plt.show()
 
 
-def run_simulation():
+if __name__ == "__main__":
     # Create environment
     env = WindyGridworld()
 
     # Train SARSA agent
     print("Training SARSA agent...")
     Q, total_rewards, steps = sarsa(
-        env, episodes=500, alpha=0.5, gamma=1.0, epsilon=0.1
+        env, episodes=170, alpha=0.5, gamma=1.0, epsilon=0.1
     )
 
     # Visualize the learned policy
@@ -206,7 +215,3 @@ def run_simulation():
     print(f"\nFinal performance (averaged over last 10 episodes):")
     print(f"Average steps: {np.mean(steps[-10:]):.2f}")
     print(f"Average reward: {np.mean(total_rewards[-10:]):.2f}")
-
-
-if __name__ == "__main__":
-    run_simulation()
