@@ -62,7 +62,7 @@ def plot_episode_vs_timesteps(time_steps, episode_numbers):
     plt.show()
 
 
-def plot_multiple_episode_vs_timesteps(alpha_epsilon_comb_dict, env_type):
+def plot_multiple_episode_vs_timesteps(alpha_epsilon_comb_dict, env_type, control_type):
     """Plot the episodes vs timestep for each combination of alpha, epsilon
     to show improvement over time and hyperparameter comparison"""
     plt.figure(figsize=(10, 7))
@@ -80,7 +80,7 @@ def plot_multiple_episode_vs_timesteps(alpha_epsilon_comb_dict, env_type):
 
     plt.ylabel("Episodes")
     plt.xlabel("Time steps")
-    plt.title(f"{env_type} Windy Gridworld Learning")
+    plt.title(f"{control_type} {env_type} Windy Gridworld Learning")
     plt.grid(True)
     plt.legend()
     plt.show()

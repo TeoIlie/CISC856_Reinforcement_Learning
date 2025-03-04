@@ -1,0 +1,78 @@
+import numpy as np
+import windygridworld
+import visualize
+import click
+import control_algorithms
+
+# Constants define environment type
+REGULAR = "Regular"  # Normal windy gridworld from Sutton & Barto
+STOCHASTIC = "Stochastic"  # King's moves, stochastic wind
+
+
+if __name__ == "__main__":
+    # Define numnber of episodes and combinations of hyperparams alpha, epsilon
+    num_episodes = 170
+
+    alpha_epsilon_comb_dict = dict.fromkeys(
+        [
+            (0.5, 0.1),
+            (0.1, 0.1),
+            (0.5, 0.01),
+            (0.1, 0.1),
+            (0.5, 0.5),
+        ],
+        None,
+    )
+
+    print("Select one of Sarsa[s], Q-Learning[q], Q(λ) [ql], and Sarsa(λ) [sl]:")
+    options = {"s": "Sarsa", "q": "Q-Learning", "sl": "Sarsa(λ)", "ql": "Q(λ)"}
+    control_type = click.prompt("Choose one", type=click.Choice(options.keys()))
+
+    for env_type in [REGULAR, STOCHASTIC]:
+        # Test on both regular and stochastic gridworld environments
+
+        for alpha, epsilon in alpha_epsilon_comb_dict.keys():
+            # Train for different combinations of epsilon and alpha
+
+            print(f"==========={env_type} Environment===========")
+            if env_type == REGULAR:
+                env = windygridworld.WindyGridworld()
+            elif env_type == STOCHASTIC:
+                env = windygridworld.StochasticGridWorld()
+
+            print(f"Alpha = {alpha}\nEpsilon = {epsilon}\n")
+
+            # Train agent with Sarsa
+            if control_type == "s":
+                Q, steps, time_steps, episode_numbers = control_algorithms.sarsa(
+                    env, episodes=num_episodes, alpha=alpha, gamma=1.0, epsilon=epsilon
+                )
+            elif control_type == "q":
+                Q, steps, time_steps, episode_numbers = control_algorithms.q_learning(
+                    env, episodes=num_episodes, alpha=alpha, gamma=1.0, epsilon=epsilon
+                )
+            elif control_type == "sl":
+                # TODO call control_algorithms.sarsa_lambda
+                pass
+            elif control_type == "ql":
+                # TODO call control_algorithms.q_learning_lambda
+                pass
+
+            # Visualize the learned policy
+            print(f"{options[control_type]} Policy")
+            visualize.visualize_policy(env, Q)
+
+            optimal_path_size = env.get_optimal_path_size(Q)
+            print("Optimal path length:\n", optimal_path_size)
+
+            average_of_episodes = num_episodes // 2
+            print(
+                f"Average steps over last {average_of_episodes} episodes:\n {np.mean(steps[-num_episodes//2:]):.2f}\n"
+            )
+
+            alpha_epsilon_comb_dict[(alpha, epsilon)] = (time_steps, episode_numbers)
+
+        # Plot episode vs time steps for each alpha, epsilon combo
+        visualize.plot_multiple_episode_vs_timesteps(
+            alpha_epsilon_comb_dict, env_type, options[control_type]
+        )
