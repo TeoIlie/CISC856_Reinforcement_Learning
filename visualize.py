@@ -13,8 +13,8 @@ def visualize_policy(env, Q):
             if (row, col) == env.goal_state:
                 # If goal or start state, mark separately
                 policy_grid[row, col] = "G"
-            elif (row, col) == env.start_state:
-                policy_grid[row, col] = "S"
+            # elif (row, col) == env.start_state:
+            #     policy_grid[row, col] = "S"
             else:
                 # Mark greedy actions with arrows
                 action = policy[row, col]
@@ -26,6 +26,16 @@ def visualize_policy(env, Q):
                     policy_grid[row, col] = "←"
                 elif action == 3:  # right
                     policy_grid[row, col] = "→"
+
+                # Additional conditional for diagonal moves
+                elif action == 4:  # up-left
+                    policy_grid[row, col] = "↖"
+                elif action == 5:  # up-right
+                    policy_grid[row, col] = "↗"
+                elif action == 6:  # down-left
+                    policy_grid[row, col] = "↙"
+                elif action == 7:  # down-right
+                    policy_grid[row, col] = "↘"
 
     print("Greedy policy π, and wind values at bottom")
     for row in range(env.rows):
@@ -52,7 +62,7 @@ def plot_episode_vs_timesteps(time_steps, episode_numbers):
     plt.show()
 
 
-def plot_multiple_episode_vs_timesteps(alpha_epsilon_comb_dict):
+def plot_multiple_episode_vs_timesteps(alpha_epsilon_comb_dict, env_type):
     """Plot the episodes vs timestep for each combination of alpha, epsilon
     to show improvement over time and hyperparameter comparison"""
     plt.figure(figsize=(10, 7))
@@ -70,7 +80,7 @@ def plot_multiple_episode_vs_timesteps(alpha_epsilon_comb_dict):
 
     plt.ylabel("Episodes")
     plt.xlabel("Time steps")
-    plt.title("Windy Gridworld Learning")
+    plt.title(f"{env_type} Windy Gridworld Learning")
     plt.grid(True)
     plt.legend()
     plt.show()

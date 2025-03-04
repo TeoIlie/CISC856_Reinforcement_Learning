@@ -93,3 +93,30 @@ class WindyGridworld:
         else:
             # Greedy action
             return np.argmax(Q[state[0], state[1]])
+
+
+class StochasticGridWorld(WindyGridworld):
+    """StochasticGridworld defines an environment for an agent according
+    to Sutton & Barto pg. 130, except the agent can move diagonally as well
+    (King's moves) and the wind is stochastic. This class inherits WindyGridworld
+    and modifies these elements."""
+
+    def __init__(self, *args, **kwargs):
+        # Everything is the same except action options and wind
+        super().__init__(*args, **kwargs)
+
+        # Actions:  up, down, left, right
+        # diagonally: up-left, up-right, down-left, down-right
+        self.actions = [
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (1, 1),
+        ]
+        self.num_actions = len(self.actions)
+
+    # TODO add stochastic wind

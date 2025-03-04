@@ -2,6 +2,10 @@ import numpy as np
 import windygridworld
 import visualize
 
+# Constants define environment type
+REGULAR = "Regular"  # Normal windy gridworld from Sutton & Barto
+STOCHASTIC = "Stochastic"  # King's moves, stochastic wind
+
 
 def sarsa(env, episodes, alpha, gamma, epsilon):
     """Use Sarsa control algorithm for given parameter values."""
@@ -72,29 +76,37 @@ if __name__ == "__main__":
         None,
     )
 
-    for alpha, epsilon in alpha_epsilon_comb_dict.keys():
-        # Train for different combinations of epsilon and alpha
-        env = windygridworld.WindyGridworld()
+    for env_type in [REGULAR, STOCHASTIC]:
+        # Test on both regular and stochastic gridworld environments
 
-        print(f"Alpha = {alpha}\nEpsilon = {epsilon}\n")
+        for alpha, epsilon in alpha_epsilon_comb_dict.keys():
+            # Train for different combinations of epsilon and alpha
 
-        # Train agent with Sarsa
-        Q, steps, time_steps, episode_numbers = sarsa(
-            env, episodes=num_episodes, alpha=0.5, gamma=1.0, epsilon=0.1
-        )
-        # Visualize the learned policy
-        print("Sarsa Policy")
-        visualize.visualize_policy(env, Q)
+            print(f"==========={env_type} Environment===========")
+            if env_type == REGULAR:
+                env = windygridworld.WindyGridworld()
+            elif env_type == STOCHASTIC:
+                env = windygridworld.StochasticGridWorld()
 
-        optimal_path_size = env.get_optimal_path_size(Q)
-        print("Optimal path length:\n", optimal_path_size)
+            print(f"Alpha = {alpha}\nEpsilon = {epsilon}\n")
 
-        average_of_episodes = num_episodes // 2
-        print(
-            f"Average steps over last {average_of_episodes} episodes:\n {np.mean(steps[-num_episodes//2:]):.2f}\n"
-        )
+            # Train agent with Sarsa
+            Q, steps, time_steps, episode_numbers = sarsa(
+                env, episodes=num_episodes, alpha=0.5, gamma=1.0, epsilon=0.1
+            )
+            # Visualize the learned policy
+            print("Sarsa Policy")
+            visualize.visualize_policy(env, Q)
 
-        alpha_epsilon_comb_dict[(alpha, epsilon)] = (time_steps, episode_numbers)
+            optimal_path_size = env.get_optimal_path_size(Q)
+            print("Optimal path length:\n", optimal_path_size)
 
-    # Plot episode vs time steps for each alpha, epsilon combo
-    visualize.plot_multiple_episode_vs_timesteps(alpha_epsilon_comb_dict)
+            average_of_episodes = num_episodes // 2
+            print(
+                f"Average steps over last {average_of_episodes} episodes:\n {np.mean(steps[-num_episodes//2:]):.2f}\n"
+            )
+
+            alpha_epsilon_comb_dict[(alpha, epsilon)] = (time_steps, episode_numbers)
+
+        # Plot episode vs time steps for each alpha, epsilon combo
+        visualize.plot_multiple_episode_vs_timesteps(alpha_epsilon_comb_dict, env_type)
