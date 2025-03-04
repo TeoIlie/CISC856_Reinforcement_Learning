@@ -3,9 +3,9 @@ import windygridworld
 import visualize
 
 
-def sarsa(env, episodes, alpha, gamma, epsilon):
-    """Use Sarsa control algorithm for given parameter values."""
-    # Q hold all values for (row, col, action) triplets
+def q_learning(env, episodes, alpha, gamma, epsilon):
+    """Q-learning off-policy control"""
+    # Q holds all values for (row, col, action) triplets
     Q = np.zeros((env.rows, env.cols, env.num_actions))
 
     # Keep track of stats for graphing
@@ -22,11 +22,11 @@ def sarsa(env, episodes, alpha, gamma, epsilon):
         step_count = 0
         done = False
 
-        # Choose initial action using epsilon-greedy selection
-        action = env.epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
-
         # Continue until terminal (goal) state reached
         while not done:
+            # Choose action using epsilon-greedy selection
+            action = env.epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
+
             # Take an action, observe reward and new state
             next_state, reward, done = env.step(action)
             total_reward += reward
@@ -36,21 +36,16 @@ def sarsa(env, episodes, alpha, gamma, epsilon):
             time_steps.append(total_steps)
             episode_numbers.append(episode)
 
-            # Choose next action with epsilon-greedy policy
-            next_action = env.epsilon_greedy_policy(
-                Q, next_state, epsilon, env.num_actions
-            )
-
-            # Sarsa update rule for Q function
+            # Q-learning update rule
+            greedy_path_size = np.argmax(Q[next_state[0], next_state[1], :])
             Q[state[0], state[1], action] += alpha * (
                 reward
-                + gamma * Q[next_state[0], next_state[1], next_action]
+                + gamma * Q[next_state[0], next_state[1], greedy_path_size]
                 - Q[state[0], state[1], action]
             )
 
-            # Move to next state, next action before next time step
+            # Move to next state
             state = next_state
-            action = next_action
 
         steps[episode] = step_count
 
@@ -78,12 +73,12 @@ if __name__ == "__main__":
 
         print(f"Alpha = {alpha}\nEpsilon = {epsilon}\n")
 
-        # Train agent with Sarsa
-        Q, steps, time_steps, episode_numbers = sarsa(
+        # Train agent with Q-learning
+        Q, steps, time_steps, episode_numbers = q_learning(
             env, episodes=num_episodes, alpha=0.5, gamma=1.0, epsilon=0.1
         )
         # Visualize the learned policy
-        print("Sarsa Policy")
+        print("Q-Learning")
         visualize.visualize_policy(env, Q)
 
         optimal_path_size = env.get_optimal_path_size(Q)
