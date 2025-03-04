@@ -33,6 +33,9 @@ class WindyGridworld:
         self.state = self.start_state
         return self.start_state
 
+    def wind_movement(self, col):
+        return self.wind[col]
+
     def step(self, action):
         """step function takes an action and applies it to the agent,
         given wind and that the agent cannot go outside the gridworld."""
@@ -45,7 +48,7 @@ class WindyGridworld:
         next_col = col + col_move
 
         # Account for wind effect
-        next_row = next_row - self.wind[col]
+        next_row = next_row - self.wind_movement(col)
 
         # Keep values in gridworld bounds
         next_row = max(0, min(next_row, self.rows - 1))
@@ -119,4 +122,8 @@ class StochasticGridWorld(WindyGridworld):
         ]
         self.num_actions = len(self.actions)
 
-    # TODO add stochastic wind
+    def wind_movement(self, col):
+        """Add stochastic wind"""
+        mean = self.wind[col]
+        mean += random.choice([1, 0, -1])
+        return mean
