@@ -63,6 +63,28 @@ class WindyGridworld:
         self.state = next_state
         return next_state, self.reward, done
 
+    def get_optimal_path_size(self, Q):
+        """Get the length of the optimal path with respect to the current policy π
+        that is greedy with respect to Q"""
+        # Start from the start state
+        current_state = self.reset()
+        path_length = 0
+        max_path_size = 1000
+
+        while path_length < max_path_size:
+            best_action = np.argmax(Q[current_state[0], current_state[1], :])
+
+            current_state, r, done = self.step(best_action)
+            path_length += 1
+
+            if done:
+                break
+
+        if path_length == max_path_size:
+            return f"Optimal path length greater than {max_path_size}"
+        else:
+            return str(path_length)
+
 
 def epsilon_greedy_policy(Q, state, epsilon, num_actions):
     """Choose non-greedy action randomly with epislon prob, and
@@ -84,6 +106,7 @@ def sarsa(env, episodes, alpha, gamma, epsilon):
     time_steps = []
     episode_numbers = []
     total_steps = 0
+    steps = np.zeros(episodes)
 
     # Loop for each episode
     for episode in range(episodes):
@@ -121,7 +144,9 @@ def sarsa(env, episodes, alpha, gamma, epsilon):
             state = next_state
             action = next_action
 
-    return Q, time_steps, episode_numbers
+        steps[episode] = step_count
+
+    return Q, steps, time_steps, episode_numbers
 
 
 def visualize_policy(env, Q):
@@ -135,8 +160,8 @@ def visualize_policy(env, Q):
             if (row, col) == env.goal_state:
                 # If goal or start state, mark separately
                 policy_grid[row, col] = "G"
-            elif (row, col) == env.start_state:
-                policy_grid[row, col] = "S"
+            # elif (row, col) == env.start_state:
+            #     policy_grid[row, col] = "S"
             else:
                 # Mark greedy actions with arrows
                 action = policy[row, col]
@@ -177,14 +202,23 @@ def plot_episode_vs_timesteps(time_steps, episode_numbers):
 if __name__ == "__main__":
     # Create environment
     env = WindyGridworld()
+    num_episodes = 170
 
     # Train agent with Sarsa
-    Q, time_steps, episode_numbers = sarsa(
-        env, episodes=170, alpha=0.5, gamma=1.0, epsilon=0.1
+    Q, steps, time_steps, episode_numbers = sarsa(
+        env, episodes=num_episodes, alpha=0.5, gamma=1.0, epsilon=0.1
     )
 
     # Visualize the learned policy
     visualize_policy(env, Q)
+
+    optimal_path_size = env.get_optimal_path_size(Q)
+    print("Optimal path length:\n", optimal_path_size)
+
+    average_of_episodes = num_episodes // 2
+    print(
+        f"Average steps over last {average_of_episodes} episodes:\n {np.mean(steps[-num_episodes//2:]):.2f}\n"
+    )
 
     # Plot episode vs time steps
     plot_episode_vs_timesteps(time_steps, episode_numbers)
