@@ -81,6 +81,9 @@ def sarsa(env, episodes, alpha, gamma, epsilon):
     Q = np.zeros((env.rows, env.cols, env.num_actions))
 
     # Keep track of stats for graphing
+    # TODO delete instances of rewards, steps from sarsa function
+    rewards = np.zeros(episodes)
+    steps = np.zeros(episodes)
     time_steps = []
     episode_numbers = []
     total_steps = 0
@@ -110,7 +113,7 @@ def sarsa(env, episodes, alpha, gamma, epsilon):
             # Choose next action with epsilon-greedy policy
             next_action = epsilon_greedy_policy(Q, next_state, epsilon, env.num_actions)
 
-            # Sarsa update rule for Q function
+            # Sarsa update rule for Q
             Q[state[0], state[1], action] += alpha * (
                 reward
                 + gamma * Q[next_state[0], next_state[1], next_action]
@@ -121,14 +124,18 @@ def sarsa(env, episodes, alpha, gamma, epsilon):
             state = next_state
             action = next_action
 
-    return Q, time_steps, episode_numbers
+        # Track total reward and steps for the episode
+        rewards[episode] = total_reward
+        steps[episode] = step_count
+
+    return Q, rewards, steps, time_steps, episode_numbers
 
 
 def visualize_policy(env, Q):
     """Creates a vizualization of the policy that is greedy w.r.t Q"""
-    # Extract the greedy policy using argmax on the actions dimension at index 2
     policy = np.argmax(Q, axis=2)
-    policy_grid = np.full((env.rows, env.cols), "", dtype=object)
+
+    policy_grid = np.full((env.rows, env.cols), " ", dtype=object)
 
     for row in range(env.rows):
         for col in range(env.cols):
@@ -149,17 +156,47 @@ def visualize_policy(env, Q):
                 elif action == 3:  # right
                     policy_grid[row, col] = "→"
 
-    print("Greedy policy π, and wind values at bottom")
+    print("Greedy Policy")
     for row in range(env.rows):
-        print("| ", end="")
+        print("|", end="")
         for col in range(env.cols):
-            print(policy_grid[row, col], "| ", end="")
+            print(f" {policy_grid[row, col]} |", end="")
         print()
 
-    wind = ""
-    for element in env.wind:
-        wind += f"  {str(element)} "
-    print(wind + "\n")
+
+def plot_learning_curve(rewards, steps):
+    # TODO delete this function
+    # Create a figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+    # Plot the total reward per episode
+    ax1.plot(rewards)
+    ax1.set_xlabel("Episode")
+    ax1.set_ylabel("Total Reward")
+    ax1.set_title("Total Reward per Episode")
+
+    # Plot the steps per episode
+    ax2.plot(steps)
+    ax2.set_xlabel("Episode")
+    ax2.set_ylabel("Steps")
+    ax2.set_title("Steps per Episode")
+
+    # Apply a smoothing window to make trends more visible
+    window_size = 10
+    smoothed_steps = np.convolve(
+        steps, np.ones(window_size) / window_size, mode="valid"
+    )
+    ax2.plot(
+        range(window_size - 1, len(steps)),
+        smoothed_steps,
+        "r-",
+        alpha=0.5,
+        label=f"Smoothed (window={window_size})",
+    )
+    ax2.legend()
+
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_episode_vs_timesteps(time_steps, episode_numbers):
@@ -178,13 +215,24 @@ if __name__ == "__main__":
     # Create environment
     env = WindyGridworld()
 
-    # Train agent with Sarsa
-    Q, time_steps, episode_numbers = sarsa(
+    # Train SARSA agent
+    print("Training SARSA agent...")
+    Q, rewards, steps, time_steps, episode_numbers = sarsa(
         env, episodes=170, alpha=0.5, gamma=1.0, epsilon=0.1
     )
 
     # Visualize the learned policy
     visualize_policy(env, Q)
 
+    # TODO remove
+    # Plot learning curves
+    # plot_learning_curve(rewards, steps)
+
     # Plot episode vs time steps
     plot_episode_vs_timesteps(time_steps, episode_numbers)
+
+    # Print final statistics
+    # TODO remove this
+    print(f"\nFinal performance (averaged over last 10 episodes):")
+    print(f"Average steps: {np.mean(steps[-10:]):.2f}")
+    print(f"Average reward: {np.mean(rewards[-10:]):.2f}")
