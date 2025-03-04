@@ -1,3 +1,4 @@
 myenv
 *.pdf
 scratch.py
+__pycache__
