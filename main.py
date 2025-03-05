@@ -4,10 +4,6 @@ import visualize
 import click
 import control_algorithms
 
-# Constants define environment type
-REGULAR = "Regular"  # Normal windy gridworld from Sutton & Barto
-STOCHASTIC = "Stochastic"  # King's moves, stochastic wind
-
 
 if __name__ == "__main__":
     # Define numnber of episodes and combinations of hyperparams alpha, epsilon
@@ -24,21 +20,21 @@ if __name__ == "__main__":
         None,
     )
 
-    print("Select one of Sarsa[s], Q-Learning[q], Q(λ) [ql], and Sarsa(λ) [sl]:")
+    print("\nSelect one of Sarsa[s], Q-Learning[q], Q(λ) [ql], and Sarsa(λ) [sl]:")
     options = {"s": "Sarsa", "q": "Q-Learning", "sl": "Sarsa(λ)", "ql": "Q(λ)"}
     control_type = click.prompt("Choose one", type=click.Choice(options.keys()))
 
-    for env_type in [REGULAR, STOCHASTIC]:
+    for env in [
+        windygridworld.WindyGridworld(),
+        windygridworld.StochasticGridWorld(),
+    ]:
         # Test on both regular and stochastic gridworld environments
+        env_type = env.get_name()
 
         for alpha, epsilon in alpha_epsilon_comb_dict.keys():
             # Train for different combinations of epsilon and alpha
 
             print(f"==========={env_type} Environment===========")
-            if env_type == REGULAR:
-                env = windygridworld.WindyGridworld()
-            elif env_type == STOCHASTIC:
-                env = windygridworld.StochasticGridWorld()
 
             print(f"Alpha = {alpha}\nEpsilon = {epsilon}\n")
 

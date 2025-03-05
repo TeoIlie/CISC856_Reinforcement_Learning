@@ -1,6 +1,10 @@
 import random
 import numpy as np
 
+# Constants define environment type
+REGULAR = "Regular"  # Normal windy gridworld from Sutton & Barto
+STOCHASTIC = "Stochastic"  # King's moves, stochastic wind
+
 
 class WindyGridworld:
     """WindyGridworld defines an environment for an agent according
@@ -27,6 +31,9 @@ class WindyGridworld:
         # Actions: up, down, left, right
         self.actions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         self.num_actions = len(self.actions)
+
+    def get_name(self):
+        return REGULAR
 
     def reset(self):
         # Reset to start state
@@ -121,6 +128,9 @@ class StochasticGridWorld(WindyGridworld):
             (1, 1),
         ]
         self.num_actions = len(self.actions)
+
+    def get_name(self):
+        return STOCHASTIC
 
     def wind_movement(self, col):
         """Add stochastic wind"""
