@@ -59,7 +59,10 @@ if __name__ == "__main__":
             visualize.visualize_policy(env, Q)
 
             optimal_path_size = env.get_optimal_path_size(Q)
-            print("Optimal path length:\n", optimal_path_size)
+            if optimal_path_size == -1:
+                print("Optimal path length > 1000")
+            else:
+                print("Optimal path length:\n", optimal_path_size)
 
             average_of_episodes = num_episodes // 2
             print(

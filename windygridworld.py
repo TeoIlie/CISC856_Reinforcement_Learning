@@ -90,9 +90,9 @@ class WindyGridworld:
                 break
 
         if path_length == max_path_size:
-            return f"Optimal path length greater than {max_path_size}"
+            return -1
         else:
-            return str(path_length)
+            return path_length
 
     def epsilon_greedy_policy(self, Q, state, epsilon, num_actions):
         """Choose non-greedy action randomly with epislon prob, and
