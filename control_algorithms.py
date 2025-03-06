@@ -4,7 +4,7 @@ import numpy as np
 EPSILON = 0.1
 ALPHA = 0.5
 GAMMA = 1.0
-LAMBDA = 0.5
+LAMBDA = 0.1
 
 
 def sarsa(env, episodes, alpha=ALPHA, gamma=GAMMA, epsilon=EPSILON):

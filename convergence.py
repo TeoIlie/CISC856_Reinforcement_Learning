@@ -5,6 +5,7 @@ import control_algorithms
 
 
 OPTIMAL_PATH_LENGTH = 15
+OPTIMAL_STOCHASTIC_PATH_LENGTH = 7
 
 if __name__ == "__main__":
     env = windygridworld.WindyGridworld()
@@ -22,27 +23,27 @@ if __name__ == "__main__":
 
     if env_type == "r":
         env = windygridworld.WindyGridworld()
+        optimal_length = OPTIMAL_PATH_LENGTH
     elif env_type == "s":
         env = windygridworld.StochasticGridWorld()
+        optimal_length = OPTIMAL_STOCHASTIC_PATH_LENGTH
 
     for i in range(1, runs + 1):
         if control_type == "s":
             Q, _, time_steps, episode_numbers = control_algorithms.sarsa_to_convergence(
-                env, OPTIMAL_PATH_LENGTH
+                env, optimal_length
             )
         elif control_type == "q":
             Q, _, time_steps, episode_numbers = (
-                control_algorithms.q_learning_to_convergence(env, OPTIMAL_PATH_LENGTH)
+                control_algorithms.q_learning_to_convergence(env, optimal_length)
             )
         elif control_type == "sl":
             Q, _, time_steps, episode_numbers = (
-                control_algorithms.sarsa_lambda_to_convergence(env, OPTIMAL_PATH_LENGTH)
+                control_algorithms.sarsa_lambda_to_convergence(env, optimal_length)
             )
         elif control_type == "ql":
             Q, _, time_steps, episode_numbers = (
-                control_algorithms.watkins_q_lambda_to_convergence(
-                    env, OPTIMAL_PATH_LENGTH
-                )
+                control_algorithms.watkins_q_lambda_to_convergence(env, optimal_length)
             )
 
         curr_total_steps = time_steps[-1]
