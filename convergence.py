@@ -13,8 +13,17 @@ if __name__ == "__main__":
     total_episodes = 0
 
     print("\nSelect one of Sarsa[s], Q-Learning[q], Q(λ) [ql], and Sarsa(λ) [sl]:")
-    options = {"s": "Sarsa", "q": "Q-Learning", "sl": "Sarsa(λ)", "ql": "Q(λ)"}
-    control_type = click.prompt("Choose one", type=click.Choice(options.keys()))
+    control_options = {"s": "Sarsa", "q": "Q-Learning", "sl": "Sarsa(λ)", "ql": "Q(λ)"}
+    control_type = click.prompt("Choose one", type=click.Choice(control_options.keys()))
+
+    print("\nSelect Regular[r] or Stochastic[s] Windy Gridworld:")
+    env_options = {"r": "Regular", "s": "Stochastic"}
+    env_type = click.prompt("Choose one", type=click.Choice(env_options.keys()))
+
+    if env_type == "r":
+        env = windygridworld.WindyGridworld()
+    elif env_type == "s":
+        env = windygridworld.StochasticGridWorld()
 
     for i in range(1, runs + 1):
         if control_type == "s":
@@ -30,8 +39,11 @@ if __name__ == "__main__":
                 control_algorithms.sarsa_lambda_to_convergence(env, OPTIMAL_PATH_LENGTH)
             )
         elif control_type == "ql":
-            # TODO
-            pass
+            Q, _, time_steps, episode_numbers = (
+                control_algorithms.watkins_q_lambda_to_convergence(
+                    env, OPTIMAL_PATH_LENGTH
+                )
+            )
 
         curr_total_steps = time_steps[-1]
         total_time_steps += curr_total_steps
@@ -44,7 +56,7 @@ if __name__ == "__main__":
         )
 
     print(
-        f"{options[control_type]} average convergence metrics over {runs} runs: \
+        f"{env_options[env_type]} environment with {control_options[control_type]} average convergence metrics over {runs} runs: \
         \nAverage time steps: {total_time_steps/runs} \
         \nAverage episodes: {total_episodes/runs}\n"
     )

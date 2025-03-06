@@ -275,8 +275,9 @@ def sarsa_lambda(
                 + gamma * Q[next_state[0], next_state[1], next_action]
                 - Q[state[0], state[1], action]
             )
+
             Q += alpha * td_error * E
-            E = gamma * lmbda * E
+            E *= gamma * lmbda
 
             # Move to next state, next action before next time step
             state = next_state
@@ -343,11 +344,155 @@ def sarsa_lambda_to_convergence(
                 - Q[state[0], state[1], action]
             )
             Q += alpha * td_error * E
-            E = gamma * lmbda * E
+            E *= gamma * lmbda
 
             # Move to next state, next action before next time step
             state = next_state
             action = next_action
+
+        steps.append(step_count)
+        episode += 1
+
+    return Q, steps, time_steps, episode_numbers
+
+
+def watkins_q_lambda(
+    env, episodes, alpha=ALPHA, gamma=GAMMA, epsilon=EPSILON, lmbda=LAMBDA
+):
+    """Watkins Q(λ) off-policy control for given number of episodes"""
+    # Q holds all values for (row, col, action) triplets
+    Q = np.zeros((env.rows, env.cols, env.num_actions))
+
+    # Keep track of stats for graphing
+    time_steps = []
+    episode_numbers = []
+    total_steps = 0
+    steps = np.zeros(episodes)
+
+    # Loop for each episode
+    for episode in range(episodes):
+        # Initialize state and other params
+        state = env.reset()
+        total_reward = 0
+        step_count = 0
+        done = False
+
+        E = np.zeros((env.rows, env.cols, env.num_actions))
+
+        # Continue until terminal (goal) state reached
+        while not done:
+            # Choose action using epsilon-greedy selection
+            action = env.epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
+
+            # Take an action, observe reward and new state
+            next_state, reward, done = env.step(action)
+            total_reward += reward
+            step_count += 1
+            total_steps += 1
+
+            time_steps.append(total_steps)
+            episode_numbers.append(episode)
+
+            # Increment eligibility trace for the current state, action pair
+            E[state[0], state[1], action] += 1.0
+
+            # Q-learning update rule
+            greedy_next_action = np.argmax(Q[next_state[0], next_state[1], :])
+            td_e = (
+                reward
+                + gamma * Q[next_state[0], next_state[1], greedy_next_action]
+                - Q[state[0], state[1], action]
+            )
+
+            # Watkins update - cut the trace for non-greedy actions
+            for s_row in range(env.rows):
+                for s_col in range(env.cols):
+                    for a in range(env.num_actions):
+                        Q[s_row, s_col, a] += alpha * td_e * E[s_row, s_col, a]
+
+                        if (
+                            s_row == next_state[0]
+                            and s_col == next_state[1]
+                            and a != greedy_next_action
+                        ):
+                            E[s_row, s_col, a] = 0
+                        else:
+                            E[s_row, s_col, a] *= gamma * lmbda
+
+            # Move to next state
+            state = next_state
+
+        steps[episode] = step_count
+
+    return Q, steps, time_steps, episode_numbers
+
+
+def watkins_q_lambda_to_convergence(
+    env, optimal_path_length, alpha=ALPHA, gamma=GAMMA, epsilon=EPSILON, lmbda=LAMBDA
+):
+    """Watkins Q(λ) off-policy control for given number of episodes"""
+    # Q holds all values for (row, col, action) triplets
+    Q = np.zeros((env.rows, env.cols, env.num_actions))
+
+    # Keep track of stats for graphing
+    time_steps = []
+    episode_numbers = []
+    total_steps = 0
+    steps = []
+    episode = 0
+
+    # Loop to convergence
+    while env.get_optimal_path_size(Q) != optimal_path_length:
+        # Initialize state and other params
+        state = env.reset()
+        total_reward = 0
+        step_count = 0
+        done = False
+
+        E = np.zeros((env.rows, env.cols, env.num_actions))
+
+        # Continue until terminal (goal) state reached
+        while not done:
+            # Choose action using epsilon-greedy selection
+            action = env.epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
+
+            # Take an action, observe reward and new state
+            next_state, reward, done = env.step(action)
+            total_reward += reward
+            step_count += 1
+            total_steps += 1
+
+            time_steps.append(total_steps)
+            episode_numbers.append(episode)
+
+            # Increment eligibility trace for the current state, action pair
+            E[state[0], state[1], action] += 1.0
+
+            # Q-learning update rule
+            greedy_next_action = np.argmax(Q[next_state[0], next_state[1], :])
+            td_e = (
+                reward
+                + gamma * Q[next_state[0], next_state[1], greedy_next_action]
+                - Q[state[0], state[1], action]
+            )
+
+            # Watkins update - cut the trace for non-greedy actions
+            for s_row in range(env.rows):
+                for s_col in range(env.cols):
+                    for a in range(env.num_actions):
+                        Q[s_row, s_col, a] += alpha * td_e * E[s_row, s_col, a]
+
+                        if (
+                            s_row == next_state[0]
+                            and s_col == next_state[1]
+                            and a != greedy_next_action
+                        ):
+                            E[s_row, s_col, a] = 0
+                        else:
+                            E[s_row, s_col, a] *= gamma * lmbda
+
+            # Move to next state
+            state = next_state
 
         steps.append(step_count)
         episode += 1

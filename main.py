@@ -52,8 +52,11 @@ if __name__ == "__main__":
                     env, episodes=num_episodes, alpha=alpha, epsilon=epsilon
                 )
             elif control_type == "ql":
-                # TODO call control_algorithms.q_learning_lambda
-                pass
+                Q, steps, time_steps, episode_numbers = (
+                    control_algorithms.watkins_q_lambda(
+                        env, episodes=num_episodes, alpha=alpha, epsilon=epsilon
+                    )
+                )
 
             # Visualize the learned policy
             print(f"{options[control_type]} Policy")
