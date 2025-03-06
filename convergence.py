@@ -26,8 +26,9 @@ if __name__ == "__main__":
                 control_algorithms.q_learning_to_convergence(env, OPTIMAL_PATH_LENGTH)
             )
         elif control_type == "sl":
-            # TODO
-            pass
+            Q, _, time_steps, episode_numbers = (
+                control_algorithms.sarsa_lambda_to_convergence(env, OPTIMAL_PATH_LENGTH)
+            )
         elif control_type == "ql":
             # TODO
             pass

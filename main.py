@@ -41,15 +41,16 @@ if __name__ == "__main__":
             # Train agent with Sarsa
             if control_type == "s":
                 Q, steps, time_steps, episode_numbers = control_algorithms.sarsa(
-                    env, episodes=num_episodes, alpha=alpha, gamma=1.0, epsilon=epsilon
+                    env, episodes=num_episodes, alpha=alpha, epsilon=epsilon
                 )
             elif control_type == "q":
                 Q, steps, time_steps, episode_numbers = control_algorithms.q_learning(
-                    env, episodes=num_episodes, alpha=alpha, gamma=1.0, epsilon=epsilon
+                    env, episodes=num_episodes, alpha=alpha, epsilon=epsilon
                 )
             elif control_type == "sl":
-                # TODO call control_algorithms.sarsa_lambda
-                pass
+                Q, steps, time_steps, episode_numbers = control_algorithms.sarsa_lambda(
+                    env, episodes=num_episodes, alpha=alpha, epsilon=epsilon
+                )
             elif control_type == "ql":
                 # TODO call control_algorithms.q_learning_lambda
                 pass

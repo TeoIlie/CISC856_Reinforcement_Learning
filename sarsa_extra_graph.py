@@ -81,7 +81,6 @@ def sarsa(env, episodes, alpha, gamma, epsilon):
     Q = np.zeros((env.rows, env.cols, env.num_actions))
 
     # Keep track of stats for graphing
-    # TODO delete instances of rewards, steps from sarsa function
     rewards = np.zeros(episodes)
     steps = np.zeros(episodes)
     time_steps = []
@@ -165,7 +164,6 @@ def visualize_policy(env, Q):
 
 
 def plot_learning_curve(rewards, steps):
-    # TODO delete this function
     # Create a figure with two subplots
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
@@ -224,7 +222,6 @@ if __name__ == "__main__":
     # Visualize the learned policy
     visualize_policy(env, Q)
 
-    # TODO remove
     # Plot learning curves
     # plot_learning_curve(rewards, steps)
 
@@ -232,7 +229,6 @@ if __name__ == "__main__":
     plot_episode_vs_timesteps(time_steps, episode_numbers)
 
     # Print final statistics
-    # TODO remove this
     print(f"\nFinal performance (averaged over last 10 episodes):")
     print(f"Average steps: {np.mean(steps[-10:]):.2f}")
     print(f"Average reward: {np.mean(rewards[-10:]):.2f}")
