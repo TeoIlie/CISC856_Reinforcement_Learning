@@ -40,12 +40,13 @@ class WindyGridworld:
         self.state = self.start_state
         return self.start_state
 
-    def wind_movement(self, col):
+    def wind_movement(self, col, _):
         return self.wind[col]
 
-    def step(self, action):
+    def step(self, action, add_perturb=True):
         """step function takes an action and applies it to the agent,
-        given wind and that the agent cannot go outside the gridworld."""
+        given wind and that the agent cannot go outside the gridworld.
+        add_perturb controls whether stochastic wind perturbation is added"""
 
         row, col = self.state
 
@@ -55,7 +56,7 @@ class WindyGridworld:
         next_col = col + col_move
 
         # Account for wind effect
-        next_row = next_row - self.wind_movement(col)
+        next_row = next_row - self.wind_movement(col, add_perturb)
 
         # Keep values in gridworld bounds
         next_row = max(0, min(next_row, self.rows - 1))
@@ -83,7 +84,9 @@ class WindyGridworld:
         while path_length < max_path_size:
             best_action = np.argmax(Q[current_state[0], current_state[1], :])
 
-            current_state, r, done = self.step(best_action)
+            # no wind perturbation is added for any env type,
+            # when optimal path length is calculated
+            current_state, r, done = self.step(best_action, False)
             path_length += 1
 
             if done:
@@ -132,8 +135,13 @@ class StochasticGridWorld(WindyGridworld):
     def get_name(self):
         return STOCHASTIC
 
-    def wind_movement(self, col):
-        """Add stochastic wind"""
+    def wind_movement(self, col, add_perturb=True):
+        """Add stochastic wind. add_perturb controls whether
+        stochastic wind perturbation is added"""
+        if not add_perturb:
+            return self.wind[col]
+        if self.wind[col] == 0:
+            return 0
         mean = self.wind[col]
         mean += random.choice([1, 0, -1])
         return mean

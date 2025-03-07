@@ -398,10 +398,10 @@ def watkins_q_lambda(
 
         E = np.zeros((env.rows, env.cols, env.num_actions))
 
+        action = env.epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
+
         # Continue until terminal (goal) state reached
         while not done:
-            # Choose action using epsilon-greedy selection
-            action = env.epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
 
             # Take an action, observe reward and new state
             next_state, reward, done = env.step(action)
@@ -411,6 +411,11 @@ def watkins_q_lambda(
 
             time_steps.append(total_steps)
             episode_numbers.append(episode)
+
+            # Choose action using epsilon-greedy selection
+            next_action = env.epsilon_greedy_policy(
+                Q, next_state, epsilon, env.num_actions
+            )
 
             # Increment eligibility trace for the current state, action pair
             E[state[0], state[1], action] += 1.0
@@ -427,22 +432,15 @@ def watkins_q_lambda(
             td_e = reward + gamma * expected_return - Q[state[0], state[1], action]
 
             # Watkins update - cut the trace for non-greedy actions
-            for s_row in range(env.rows):
-                for s_col in range(env.cols):
-                    for a in range(env.num_actions):
-                        Q[s_row, s_col, a] += alpha * td_e * E[s_row, s_col, a]
-
-                        if (
-                            s_row == next_state[0]
-                            and s_col == next_state[1]
-                            and a != greedy_next_action
-                        ):
-                            E[s_row, s_col, a] = 0
-                        else:
-                            E[s_row, s_col, a] *= gamma * lmbda
+            Q += alpha * td_e * E
+            if next_action == greedy_next_action:
+                E *= gamma * lmbda
+            else:
+                E = np.zeros_like(Q)
 
             # Move to next state
             state = next_state
+            action = next_action
 
         steps[episode] = step_count
 
@@ -473,10 +471,10 @@ def watkins_q_lambda_to_convergence(
 
         E = np.zeros((env.rows, env.cols, env.num_actions))
 
+        action = env.epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
+
         # Continue until terminal (goal) state reached
         while not done:
-            # Choose action using epsilon-greedy selection
-            action = env.epsilon_greedy_policy(Q, state, epsilon, env.num_actions)
 
             # Take an action, observe reward and new state
             next_state, reward, done = env.step(action)
@@ -486,6 +484,11 @@ def watkins_q_lambda_to_convergence(
 
             time_steps.append(total_steps)
             episode_numbers.append(episode)
+
+            # Choose action using epsilon-greedy selection
+            next_action = env.epsilon_greedy_policy(
+                Q, next_state, epsilon, env.num_actions
+            )
 
             # Increment eligibility trace for the current state, action pair
             E[state[0], state[1], action] += 1.0
@@ -502,22 +505,15 @@ def watkins_q_lambda_to_convergence(
             td_e = reward + gamma * expected_return - Q[state[0], state[1], action]
 
             # Watkins update - cut the trace for non-greedy actions
-            for s_row in range(env.rows):
-                for s_col in range(env.cols):
-                    for a in range(env.num_actions):
-                        Q[s_row, s_col, a] += alpha * td_e * E[s_row, s_col, a]
-
-                        if (
-                            s_row == next_state[0]
-                            and s_col == next_state[1]
-                            and a != greedy_next_action
-                        ):
-                            E[s_row, s_col, a] = 0
-                        else:
-                            E[s_row, s_col, a] *= gamma * lmbda
+            Q += alpha * td_e * E
+            if next_action == greedy_next_action:
+                E *= gamma * lmbda
+            else:
+                E = np.zeros_like(Q)
 
             # Move to next state
             state = next_state
+            action = next_action
 
         steps.append(step_count)
         episode += 1
