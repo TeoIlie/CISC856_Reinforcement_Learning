@@ -4,7 +4,7 @@ import numpy as np
 EPSILON = 0.1
 ALPHA = 0.5
 GAMMA = 1.0
-LAMBDA = 0.1
+LAMBDA = 0.5
 
 
 def sarsa(env, episodes, alpha=ALPHA, gamma=GAMMA, epsilon=EPSILON):
@@ -45,11 +45,15 @@ def sarsa(env, episodes, alpha=ALPHA, gamma=GAMMA, epsilon=EPSILON):
                 Q, next_state, epsilon, env.num_actions
             )
 
+            # If the episode is done, no more returns expected
+            if not done:
+                expected_return = Q[next_state[0], next_state[1], next_action]
+            else:
+                expected_return = 0
+
             # Sarsa update rule for Q function
             Q[state[0], state[1], action] += alpha * (
-                reward
-                + gamma * Q[next_state[0], next_state[1], next_action]
-                - Q[state[0], state[1], action]
+                reward + gamma * expected_return - Q[state[0], state[1], action]
             )
 
             # Move to next state, next action before next time step
@@ -102,11 +106,15 @@ def sarsa_to_convergence(
                 Q, next_state, epsilon, env.num_actions
             )
 
+            # If the episode is done, no more returns expected
+            if not done:
+                expected_return = Q[next_state[0], next_state[1], next_action]
+            else:
+                expected_return = 0
+
             # Sarsa update rule for Q function
             Q[state[0], state[1], action] += alpha * (
-                reward
-                + gamma * Q[next_state[0], next_state[1], next_action]
-                - Q[state[0], state[1], action]
+                reward + gamma * expected_return - Q[state[0], state[1], action]
             )
 
             # Move to next state, next action before next time step
@@ -153,11 +161,14 @@ def q_learning(env, episodes, alpha=ALPHA, gamma=GAMMA, epsilon=EPSILON):
             episode_numbers.append(episode)
 
             # Q-learning update rule
-            greedy_next_action = np.argmax(Q[next_state[0], next_state[1], :])
+            # If the episode is done, no more returns expected
+            if not done:
+                greedy_next_action = np.argmax(Q[next_state[0], next_state[1], :])
+                expected_return = Q[next_state[0], next_state[1], greedy_next_action]
+            else:
+                expected_return = 0
             Q[state[0], state[1], action] += alpha * (
-                reward
-                + gamma * Q[next_state[0], next_state[1], greedy_next_action]
-                - Q[state[0], state[1], action]
+                reward + gamma * expected_return - Q[state[0], state[1], action]
             )
 
             # Move to next state
@@ -205,11 +216,15 @@ def q_learning_to_convergence(
             episode_numbers.append(episode)
 
             # Q-learning update rule
-            greedy_next_action = np.argmax(Q[next_state[0], next_state[1], :])
+            # If the episode is done, no more returns expected
+            if not done:
+                greedy_next_action = np.argmax(Q[next_state[0], next_state[1], :])
+                expected_return = Q[next_state[0], next_state[1], greedy_next_action]
+            else:
+                expected_return = 0
+
             Q[state[0], state[1], action] += alpha * (
-                reward
-                + gamma * Q[next_state[0], next_state[1], greedy_next_action]
-                - Q[state[0], state[1], action]
+                reward + gamma * expected_return - Q[state[0], state[1], action]
             )
 
             # Move to next state
@@ -268,13 +283,15 @@ def sarsa_lambda(
             # Increment eligibility trace for the current state, action pair
             E[state[0], state[1], action] += 1.0
 
+            # If the episode is done, no more returns expected
+            if not done:
+                expected_return = Q[next_state[0], next_state[1], next_action]
+            else:
+                expected_return = 0
+
             # Use element-wise operation to update the whole Q, E arrays
             # Sarsa(λ) update rule is used
-            td_error = (
-                reward
-                + gamma * Q[next_state[0], next_state[1], next_action]
-                - Q[state[0], state[1], action]
-            )
+            td_error = reward + gamma * expected_return - Q[state[0], state[1], action]
 
             Q += alpha * td_error * E
             E *= gamma * lmbda
@@ -336,13 +353,15 @@ def sarsa_lambda_to_convergence(
             # Increment eligibility trace for the current state, action pair
             E[state[0], state[1], action] += 1.0
 
+            # If the episode is done, no more returns expected
+            if not done:
+                expected_return = Q[next_state[0], next_state[1], next_action]
+            else:
+                expected_return = 0
+
             # Use element-wise operation to update the whole Q, E arrays
             # Sarsa(λ) update rule is used
-            td_error = (
-                reward
-                + gamma * Q[next_state[0], next_state[1], next_action]
-                - Q[state[0], state[1], action]
-            )
+            td_error = reward + gamma * expected_return - Q[state[0], state[1], action]
             Q += alpha * td_error * E
             E *= gamma * lmbda
 
@@ -396,13 +415,16 @@ def watkins_q_lambda(
             # Increment eligibility trace for the current state, action pair
             E[state[0], state[1], action] += 1.0
 
-            # Q-learning update rule
             greedy_next_action = np.argmax(Q[next_state[0], next_state[1], :])
-            td_e = (
-                reward
-                + gamma * Q[next_state[0], next_state[1], greedy_next_action]
-                - Q[state[0], state[1], action]
-            )
+
+            # If the episode is done, no more returns expected
+            if not done:
+                expected_return = Q[next_state[0], next_state[1], greedy_next_action]
+            else:
+                expected_return = 0
+
+            # Q-learning update rule
+            td_e = reward + gamma * expected_return - Q[state[0], state[1], action]
 
             # Watkins update - cut the trace for non-greedy actions
             for s_row in range(env.rows):
@@ -468,13 +490,16 @@ def watkins_q_lambda_to_convergence(
             # Increment eligibility trace for the current state, action pair
             E[state[0], state[1], action] += 1.0
 
-            # Q-learning update rule
             greedy_next_action = np.argmax(Q[next_state[0], next_state[1], :])
-            td_e = (
-                reward
-                + gamma * Q[next_state[0], next_state[1], greedy_next_action]
-                - Q[state[0], state[1], action]
-            )
+
+            # If the episode is done, no more returns expected
+            if not done:
+                expected_return = Q[next_state[0], next_state[1], greedy_next_action]
+            else:
+                expected_return = 0
+
+            # Q-learning update rule
+            td_e = reward + gamma * expected_return - Q[state[0], state[1], action]
 
             # Watkins update - cut the trace for non-greedy actions
             for s_row in range(env.rows):
