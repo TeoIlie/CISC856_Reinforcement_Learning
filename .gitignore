@@ -1,6 +1,8 @@
-myenv
+rl_env
 *.pdf
 *.zip
+*.vscode
 scratch.py
 __pycache__
 .DS_Store
+Gymnasium_Tutorial.ipynb
