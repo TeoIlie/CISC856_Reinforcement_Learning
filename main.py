@@ -38,7 +38,6 @@ if __name__ == "__main__":
 
             print(f"Alpha = {alpha}\nEpsilon = {epsilon}\n")
 
-            # Train agent with Sarsa
             if control_type == "s":
                 Q, steps, time_steps, episode_numbers = control_algorithms.sarsa(
                     env, episodes=num_episodes, alpha=alpha, epsilon=epsilon
