@@ -26,7 +26,7 @@ First, hyperparameter choices and convergence time were compared for the regular
 
 Hyperparameters were compared using \code{main.py}. For Sarsa, good hyperparameter options in general are $\alpha = 0.5, \epsilon = 0.1$. These are commonly used, including in the Sutton and Barto textbook on pg. 130. The same values work for Q-Learning, although other values are also commonly chosen, such as $\alpha \in [0.1, 0.5]$ and $\epsilon \in [0.1, 0.3]$. These $\alpha$ values ensure fast but stable learning, and the $\epsilon$ values are a good balance of exploration and exploitation. 
 
-Figure \ref{fig:hyperparam} shows a graphical comparison of other value combinations. As can be seen, in this particular case, a smaller value for $\epsilon=10^{-5}$ was slightly better, and the alternatives were worse. This means a greedier action selection strategy (selecting non-optimal actions less frequently due to smaller $\epsilon$) appears to complete episodes faster while still exploring sufficiently. For the rest of the report however $\epsilon=0.1$ is used, as it works better universally, including for the stochastic King's move environment, which will be covered in section \ref{stochastic_env}.
+Figure \ref{fig:hyperparam} shows a graphical comparison of other value combinations. As can be seen, in this particular case, a smaller value for $\epsilon=10^{-5}$ was slightly better, and the alternatives were worse. This means a greedier action selection strategy (selecting non-optimal actions less frequently due to smaller $\epsilon$) appears to complete episodes faster while still exploring sufficiently. For the rest of the report however $\epsilon=0.1$ is used, as it works better universally, including for the stochastic King's move environment, which will be covered in Section \ref{stochastic_env}.
 
 The same parameter choices performed best for Sarsa($\lambda$) and Watkins Q($\lambda$) as well, although the graphs are not shown due to space constraints. 
 
@@ -66,7 +66,7 @@ Figure \ref{fig:regular_example} shows examples of the optimal policy learned us
 
 Next, Sarsa($\lambda$) and Watkins Q($\lambda$) were compared with different values for their additional hyperparameter $\lambda$, for set values of $\alpha = 0.5, \epsilon = 0.1$. The best value was found to be $\lambda=0.5$. This makes sense, as a value of $0$ corresponds to 1-step TD, and a value of $1$ corresponds to Monte Carlo, whereas a middle value like $0.5$ gives an eligibility trace that balances both, allowing the agent to learn from both immediate and past rewards.
 
-In summary, the best hyperparameter choices were found to be $\alpha = 0.5, \epsilon = 0.1$ and $\lambda=0.5$.
+In summary, the best hyperparameter choices for regular gridworld were found to be $\alpha = 0.5, \epsilon = 10^{-5}$ and $\lambda=0.5$.
 
 \begin{figure}[h!]
   \centering
@@ -118,7 +118,7 @@ Next, the modified windy grid world was investigated with stochastic wind and Ki
 
 For the stochastic King's moves gridworld environment, $\alpha = 0.5, \epsilon = 0.1$ performed the best of the hyperparameter choices, as is shown in Figure \ref{fig:stochastic_hyperparam}. The large value of $\epsilon = 0.1$ performed better than $\epsilon = 10^{-5}$, unlike regular gridworld, probably because the increased number of action options as well as the stochastic wind meant that more exploration was necessary. Learning was also less stable due to the stochastic nature of the wind, as can be seen by the graphs having a less smooth shape as compared to Figure \ref{fig:hyperparam}.
 
-It is now shown here to save space, but in the stochastic environment, Sarsa($\lambda$) and Watkins Q($\lambda$) also performed best with the same hyperparameter choices. In addition, example policies learned are shown in Figure \ref{fig:stochastic_example_policy}. It should be noted that the shortest path, due to the ability to move diagonally, is $7$, not $15$, and that several optimal paths with the same length exist.
+It is not shown here to save space, but in the stochastic environment, Sarsa($\lambda$) and Watkins Q($\lambda$) also performed best with the same hyperparameter choices. In addition, example policies learned are shown in Figure \ref{fig:stochastic_example_policy}. It should be noted that the shortest path, due to the ability to move diagonally, is $7$, not $15$, and that several optimal paths with the same length exist.
 
 \begin{figure}[h!]
   \centering
@@ -153,7 +153,9 @@ It is now shown here to save space, but in the stochastic environment, Sarsa($\l
 
 \subsubsection{Hyperparameter choice for $\lambda$ for Eligibility Trace Algorithms}
 
-A comparison of $\lambda$ values for the eligibility trace algorithms in the stochastic environment is shown in Figure \ref{fig:lambda_stochastic_comparison} and showed that values $0.1, 0.5$ perform similarly, but $0.9$ performs much more poorly; this is likely because the stochastic nature of the environment means less emphasis should be placed on past experience, as it can be misleading. 
+A comparison of $\lambda$ values for the eligibility trace algorithms in the stochastic environment is shown in Figure \ref{fig:lambda_stochastic_comparison} and showed that values $0.1$ and $0.5$ perform similarly, but $0.9$ performs much more poorly; this is likely because the stochastic nature of the environment means less emphasis should be placed on past experience, as it can be misleading. 
+
+In summary, the best hyperparameter choices for stochastic King's moves in gridworld were found to be $\alpha = 0.5, \epsilon = 0.1$ and $\lambda \in [0.1,0.5]$.
 
 \begin{figure}[h!]
   \centering
@@ -172,7 +174,7 @@ A comparison of $\lambda$ values for the eligibility trace algorithms in the sto
 
 \subsection{Convergence comparison for Stochastic Windy Gridworld}
 
-Convergence metrics were also compared in the stochastic environment, similar to Section \ref{convergence_regular}, and are shown in Table \ref{table:convergence_stochastic}. The results showed that Sarsa and Q-Learning performed similarly, while Sarsa($\lambda$) performed worse and Watkins Q($\lambda$) was worse still. This is likely because eligibility traces perform poorly in the stochastic environment. By maintaining a longer trace with noisy values, they actually perform more poorly than the 1-step lookahead used in the regular algorithms. Watkins Q(lambda) performs worse than Sarsa($\lambda$) possibly because it resets the trace when a non-greedy action is taken, whereas Sarsa maintains the information even if it is noisy.
+Convergence metrics were also compared in the stochastic environment, similar to Section \ref{convergence_regular}, and are shown in Table \ref{table:convergence_stochastic}. The results showed that Sarsa and Q-Learning performed similarly, while Sarsa($\lambda$) performed worse and Watkins Q($\lambda$) was worse still. This is likely because eligibility traces perform poorly in the stochastic environment. By maintaining a longer trace with noisy values, they actually perform more poorly than the 1-step lookahead used in the regular algorithms. Watkins Q(lambda) performs worse than Sarsa($\lambda$) possibly because it resets the trace when a non-greedy action is taken, whereas Sarsa maintains the information trace even if it is noisy and benefits from it. Additional investigation would be warranted to be certain about this.
 
 \begin{table}[h]
     \centering
@@ -190,7 +192,7 @@ Convergence metrics were also compared in the stochastic environment, similar to
         \textbf{Watkins Q($\lambda$)} & 17647.0 & 267.22\\
         \hline
     \end{tabular}
-    \caption{Average time steps and average episodes required to find one of the optimal paths for different control algorithms in the stochastic environment. Hyperparameter values are $\alpha = 0.5, \epsilon = 0.1, \lambda=0.5$.}
+    \caption{Average time steps and average episodes required to find one of the optimal paths for different control algorithms in the stochastic environment. Performance from worst to best is: Watkins Q($\lambda$), Sarsa($\lambda$), Sarsa, and Q-Learning. Hyperparameter values are $\alpha = 0.5, \epsilon = 0.1, \lambda=0.5$.}
     \label{table:convergence_stochastic}
 \end{table}
 
