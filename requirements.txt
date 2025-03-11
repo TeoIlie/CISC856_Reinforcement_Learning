@@ -2,3 +2,8 @@ numpy
 click
 matplotlib
 gymnasium
+pygame
+stable-baselines3[extra]
+swig
+gymnasium[box2d]
+tensorboard
