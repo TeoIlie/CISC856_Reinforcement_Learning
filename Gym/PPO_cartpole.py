@@ -8,6 +8,15 @@ PPO_MODEL_DIR = f"{MODEL_DIR}/ppo_cartpole"
 TRAIN = False
 
 
+def get_env_info(env):
+    """Print some info about the env"""
+    print("Environment info")
+
+    print("Observation space: ", env.observation_space)
+    print("Example initial observation: ", env.reset()[0])
+    print("Action space: ", env.action_space)
+
+
 def train(env):
     """Train a model on environment, with PPO, and save"""
     # Initialize the PPO model
@@ -26,10 +35,11 @@ def train(env):
     return model
 
 
-def test(env, model):
+def test(model):
     """Test the trained agent"""
     print("Testing model with PyGame...")
     env = gym.make("CartPole-v1", render_mode="human")
+
     obs, _ = env.reset()
     for _ in range(1000):
         action, _states = model.predict(obs, deterministic=True)
@@ -43,6 +53,8 @@ if __name__ == "__main__":
     # Create the environment (CartPole is a classic RL benchmark)
     env = make_vec_env("CartPole-v1", n_envs=4)  # Vectorized env for parallel training
 
+    get_env_info(env)
+
     # train or load the model
     if TRAIN:
         model = train(env)
@@ -53,6 +65,6 @@ if __name__ == "__main__":
             print(f"Error loading model from {PPO_MODEL_DIR}")
 
     # test the model
-    test(env, model)
+    test(model)
 
     env.close()
