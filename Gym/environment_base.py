@@ -16,7 +16,7 @@ A2C_MODEL_DIR = f"{MODEL_DIR}/a2c_lunarlander"
 
 
 class GymEnvironment(ABC):
-    def __init__(self, train):
+    def __init__(self, train=True):
         """init method must define env, model.
         train = True trains a model from scratch, else loads it from folder"""
         self.env = self.get_train_env()
@@ -49,6 +49,10 @@ class GymEnvironment(ABC):
     def get_dir(self):
         pass
 
+    @abstractmethod
+    def get_default_training_steps(self):
+        pass
+
     """Default methods"""
 
     def output_env_info(self):
@@ -66,7 +70,7 @@ class GymEnvironment(ABC):
         self.model = self.get_model()
 
         # Train the agent
-        self.model.learn(total_timesteps=100000)
+        self.model.learn(total_timesteps=self.get_default_training_steps())
 
         # Save the model
         os.makedirs(MODEL_DIR, exist_ok=True)
@@ -107,6 +111,9 @@ class PPOCartpole(GymEnvironment):
         except Exception as e:
             print(f"Error loading model from {PPO_MODEL_DIR}")
 
+    def get_default_training_steps(self):
+        return 1e5
+
 
 class A2CLunarLander(GymEnvironment):
     def get_train_env(self):
@@ -127,14 +134,17 @@ class A2CLunarLander(GymEnvironment):
         except Exception as e:
             print(f"Error loading model from {A2C_MODEL_DIR}")
 
+    def get_default_training_steps(self):
+        return 1e6
+
 
 if __name__ == "__main__":
     env_options = {"l": "LunarLander", "c": "Cartpole"}
-    print(f"Select one of {env_options}")
+    print(f"Environment Selection:\nSelect one of {env_options}")
     env_type = click.prompt("Choose one", type=click.Choice(env_options.keys()))
 
     train_options = {"y": True, "n": False}
-    print(f"Select one of {train_options}")
+    print(f"Training Selection:\nSelect one of {train_options}")
     train = train_options[
         click.prompt("Choose one", type=click.Choice(train_options.keys()))
     ]

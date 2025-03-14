@@ -6,3 +6,4 @@ scratch.py
 Gym/scratch
 __pycache__
 .DS_Store
+.python-version
