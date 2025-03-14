@@ -5,6 +5,7 @@ import click
 
 from stable_baselines3 import PPO
 from stable_baselines3 import A2C
+from stable_baselines3 import DQN
 from stable_baselines3.common.env_util import make_vec_env
 from abc import ABC, abstractmethod
 
@@ -13,6 +14,11 @@ TRAIN = False
 MODEL_DIR = "models"
 PPO_MODEL_DIR = f"{MODEL_DIR}/ppo_cartpole"
 A2C_MODEL_DIR = f"{MODEL_DIR}/a2c_lunarlander"
+DQN_MODEL_DIR = f"{MODEL_DIR}/dqn_mountaincar"
+
+PPO_DEFAULT_TRAINING_STEPS = 1e5
+A2C_DEFAULT_TRAINING_STEPS = 1e6
+DQN_DEFAULT_TRAINING_STEPS = 1e6
 
 
 class GymEnvironment(ABC):
@@ -112,7 +118,7 @@ class PPOCartpole(GymEnvironment):
             print(f"Error loading model from {PPO_MODEL_DIR}")
 
     def get_default_training_steps(self):
-        return 1e5
+        return PPO_DEFAULT_TRAINING_STEPS
 
 
 class A2CLunarLander(GymEnvironment):
@@ -135,11 +141,49 @@ class A2CLunarLander(GymEnvironment):
             print(f"Error loading model from {A2C_MODEL_DIR}")
 
     def get_default_training_steps(self):
-        return 1e6
+        return A2C_DEFAULT_TRAINING_STEPS
+
+
+class DQNMountainCar(GymEnvironment):
+    def get_train_env(self):
+        return make_vec_env("MountainCar-v0", n_envs=4)
+
+    def get_test_env(self):
+        return gym.make("MountainCar-v0", render_mode="human")
+
+    def get_model(self):
+        return DQN(
+            policy="MlpPolicy",
+            env=self.env,
+            learning_rate=0.004,
+            buffer_size=10000,
+            exploration_fraction=0.2,
+            exploration_final_eps=0.07,
+            batch_size=32,
+            gamma=0.98,
+            target_update_interval=600,
+            learning_starts=1000,
+            train_freq=16,
+            gradient_steps=8,
+            policy_kwargs=dict(net_arch=[64, 64]),
+            verbose=1,
+        )
+
+    def get_dir(self):
+        return DQN_MODEL_DIR
+
+    def load_model(self):
+        try:
+            self.model = A2C.load(DQN_MODEL_DIR)
+        except Exception as e:
+            print(f"Error loading model from {DQN_MODEL_DIR}")
+
+    def get_default_training_steps(self):
+        return DQN_DEFAULT_TRAINING_STEPS
 
 
 if __name__ == "__main__":
-    env_options = {"l": "LunarLander", "c": "Cartpole"}
+    env_options = {"l": "LunarLander", "c": "Cartpole", "m": "MountainCar"}
     print(f"Environment Selection:\nSelect one of {env_options}")
     env_type = click.prompt("Choose one", type=click.Choice(env_options.keys()))
 
@@ -153,5 +197,7 @@ if __name__ == "__main__":
         env = A2CLunarLander(train)
     elif env_type == "c":
         env = PPOCartpole(train)
+    elif env_type == "m":
+        env = DQNMountainCar(train)
 
     env.test()
