@@ -1,99 +1,122 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+ALPHA = 0.01
+ITER = 10_000
+
+PRISONER = "Prisoner's dilemma"
+PENNIES = "Matching pennies"
+RPS = "Rock paper scissors"
+
+# Define the starting policies
+policy_2_by_2 = [
+    ([0.5, 0.5], [0.5, 0.5]),  # Uniform distribution
+    ([0.8, 0.2], [0.8, 0.2]),  # Biased for both players to co-operate
+    ([0.2, 0.8], [0.2, 0.8]),  # Biased for both players to defect
+    ([0.8, 0.2], [0.2, 0.8]),  # Biased for one to co-op, one to defect
+]
+start_policy = {
+    PRISONER: policy_2_by_2,
+    PENNIES: policy_2_by_2,
+    RPS: [
+        ([1 / 3, 1 / 3, 1 / 3], [1 / 3, 1 / 3, 1 / 3]),  # Uniform
+        ([0.8, 0.1, 0.1], [0.1, 0.8, 0.1]),  # Biased
+        ([0.8, 0.1, 0.1], [0.8, 0.1, 0.1]),  # Biased
+        ([0.1, 0.1, 0.8], [0.1, 0.8, 0.1]),  # Biased
+    ],
+}
+
+# Game reward functions
+games = {
+    PRISONER: [[5, 0], [10, 1]],
+    PENNIES: [[1, -1], [-1, 1]],
+    RPS: [[0, -1, 1], [1, 0, -1], [-1, 1, 0]],
+}
+
 
 class MultiplayerGames:
-    def __init__(self, R1, alpha=0.01, iterations=10000):
-        self.R1 = np.array(R1)
-        self.num_actions_p1, self.num_actions_p2 = self.R1.shape
+    def __init__(self, p1_reward, isPrisoner, alpha=ALPHA, iterations=ITER):
+        self.p1_reward = np.array(p1_reward)
+        self.num_actions_p1 = len(p1_reward)
+        self.num_actions_p2 = len(p1_reward[0])
 
-        # Set player 2's reward matrix based on game type
-        if self.R1.shape == (2, 2) and np.array_equal(
-            self.R1, np.array([[5, 0], [10, 1]])
-        ):
-            self.R2 = self.R1.T  # Prisoners Dilemma
+        if isPrisoner:
+            self.p2_reward = (
+                self.p1_reward.T
+            )  # Prisoner's dilemma reward for player 2 is transpose
         else:
-            self.R2 = -self.R1  # Zero-sum games
+            self.p2_reward = -self.p1_reward  # Other games are the negation
 
         self.alpha = alpha
         self.iterations = iterations
 
-    def initialize_policies(self, p1_init=None, p2_init=None):
-        # Initialize with uniform or specified policies
-        self.p1 = (
-            np.ones(self.num_actions_p1) / self.num_actions_p1
-            if p1_init is None
-            else np.array(p1_init)
-        )
-        self.p2 = (
-            np.ones(self.num_actions_p2) / self.num_actions_p2
-            if p2_init is None
-            else np.array(p2_init)
-        )
-        self.p1_history = [self.p1.copy()]
-        self.p2_history = [self.p2.copy()]
+    def initialize_policies(self, p1_init, p2_init):
+        self.p1 = np.array(p1_init)
+        self.p2 = np.array(p2_init)
 
-    def update_policy(self, policy, action, reward):
-        new_policy = policy.copy()
-        # Apply the update rule from the assignment
-        for a in range(len(policy)):
+        self.p1_progress = [self.p1.copy()]
+        self.p2_progress = [self.p2.copy()]
+
+    def update(self, policy, action, reward):
+        updated_policy = policy.copy()
+
+        for a in range(self.num_actions_p1):
+            # Update selected action separately from others
             if a == action:
-                new_policy[a] += self.alpha * reward * (1 - policy[a])
+                updated_policy[a] += self.alpha * reward * (1 - policy[a])
             else:
-                new_policy[a] -= self.alpha * reward * policy[a]
+                updated_policy[a] -= self.alpha * reward * policy[a]
 
-        # Normalize to ensure valid probability distribution
-        return np.clip(new_policy, 0, 1) / np.sum(np.clip(new_policy, 0, 1))
+        # Keep the policy probabilities between 0 and 1, and normalize
+        updated_policy = np.clip(updated_policy, 0, 1)
+        updated_policy /= updated_policy.sum()
+        return updated_policy
 
-    def run(self):
-        rewards_p1, rewards_p2 = [], []
+    def play(self):
 
         for _ in range(self.iterations):
-            # Select actions
+            # Choose action according to prob. dist.
             a1 = np.random.choice(self.num_actions_p1, p=self.p1)
             a2 = np.random.choice(self.num_actions_p2, p=self.p2)
 
-            # Calculate rewards
-            r1, r2 = self.R1[a1, a2], self.R2[a1, a2]
+            p1_reward, p2_reward = self.p1_reward[a1, a2], self.p2_reward[a1, a2]
 
-            # Update policies
-            self.p1 = self.update_policy(self.p1, a1, r1)
-            self.p2 = self.update_policy(self.p2, a2, r2)
+            self.p1 = self.update(self.p1, a1, p1_reward)
+            self.p2 = self.update(self.p2, a2, p2_reward)
 
-            # Store history
-            self.p1_history.append(self.p1.copy())
-            self.p2_history.append(self.p2.copy())
-            rewards_p1.append(r1)
-            rewards_p2.append(r2)
+            # Save progress for plotting
+            self.p1_progress.append(self.p1.copy())
+            self.p2_progress.append(self.p2.copy())
 
-        # Calculate game value
-        value = sum(
-            self.p1[i] * self.p2[j] * self.R1[i, j]
-            for i in range(self.num_actions_p1)
-            for j in range(self.num_actions_p2)
-        )
+        # Get total game value from player 1's perspective
+        p1_value = 0
+        p2_value = 0
+        for i in range(self.num_actions_p1):
+            for j in range(self.num_actions_p2):
+                p1_value += self.p1[i] * self.p2[j] * self.p1_reward[i, j]
+                p2_value += self.p1[i] * self.p2[j] * self.p2_reward[i, j]
 
-        return self.p1, self.p2, value, rewards_p1, rewards_p2
+        return self.p1, self.p2, p1_value, p2_value
 
     def plot_policies(self, title):
-        p1_history = np.array(self.p1_history)
-        p2_history = np.array(self.p2_history)
+        p1_progress = np.array(self.p1_progress)
+        p2_progress = np.array(self.p2_progress)
 
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(12, 8))
 
-        # Player 1 policy plot
+        # Plotting player 1 policy
         plt.subplot(2, 1, 1)
         for i in range(self.num_actions_p1):
-            plt.plot(p1_history[:, i], label=f"Action {i}")
+            plt.plot(p1_progress[:, i], label=f"Action {i}")
         plt.title(f"Player 1 Policy - {title}")
         plt.ylabel("Probability")
         plt.legend()
         plt.grid(True)
 
-        # Player 2 policy plot
+        # Plotting player 2 policy
         plt.subplot(2, 1, 2)
         for i in range(self.num_actions_p2):
-            plt.plot(p2_history[:, i], label=f"Action {i}")
+            plt.plot(p2_progress[:, i], label=f"Action {i}")
         plt.title(f"Player 2 Policy - {title}")
         plt.xlabel("Iterations")
         plt.ylabel("Probability")
@@ -104,45 +127,34 @@ class MultiplayerGames:
         plt.show()
 
 
-# Define the games
-games = {
-    "Prisoner's dilemma": [[5, 0], [10, 1]],
-    "Matching pennies": [[1, -1], [-1, 1]],
-    "Rock, paper, scissors": [[0, -1, 1], [1, 0, -1], [-1, 1, 0]],
-}
-
-# Initial policies for testing
-init_policies = {
-    "Prisoners Dilemma": [
-        (None, None),
-        ([0.8, 0.2], [0.8, 0.2]),
-        ([0.2, 0.8], [0.2, 0.8]),
-    ],
-    "Matching Pennies": [(None, None), ([0.8, 0.2], [0.8, 0.2])],
-    "Rock Paper Scissors": [(None, None), ([0.6, 0.2, 0.2], [0.2, 0.6, 0.2])],
-}
-
-
 def main():
     for game_name, reward_matrix in games.items():
-        print(f"\n===== {game_name} =====")
+        print("\n", game_name)
 
-        for i, (p1_init, p2_init) in enumerate(init_policies[game_name]):
-            # Create and run game
-            game = MultiplayerGames(reward_matrix, alpha=0.01, iterations=10000)
+        for i, (p1_init, p2_init) in enumerate(start_policy[game_name]):
+
+            if game_name == PRISONER:
+                isPrisoner = True
+            else:
+                isPrisoner = False
+
+            game = MultiplayerGames(reward_matrix, isPrisoner)
             game.initialize_policies(p1_init, p2_init)
-            final_p1, final_p2, value, _, _ = game.run()
+            final_p1, final_p2, p1_value, p2_value = game.play()
 
-            # Print results
-            print(f"\nInitial Policy {i+1}:")
-            print(f"P1 Initial: {p1_init if p1_init is not None else 'Uniform'}")
-            print(f"P2 Initial: {p2_init if p2_init is not None else 'Uniform'}")
+            # Printing final results
+            print(f"\nStart policy {i+1}:")
+
+            print(f"P1 Initial: {p1_init}")
             print(f"P1 Final: {final_p1.round(4)}")
-            print(f"P2 Final: {final_p2.round(4)}")
-            print(f"Game Value: {value:.4f}")
 
-            # Plot policy evolution
-            game.plot_policies(f"{game_name} - Policy {i+1}")
+            print(f"P2 Initial: {p2_init}")
+            print(f"P2 Final: {final_p2.round(4)}")
+
+            print(f"P1 Value: {p1_value:.2f}")
+            print(f"P2 Value: {p2_value:.2f}")
+
+            game.plot_policies(f"{game_name} - Initial Distribution {i+1}")
 
 
 if __name__ == "__main__":
