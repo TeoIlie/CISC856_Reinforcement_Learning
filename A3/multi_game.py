@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Hyperparams
-ALPHA = 0.01
+ALPHA = 0.001
 ITER = 10_000
 
 
@@ -10,10 +10,18 @@ class MultiplayerGames:
     """MultiplayerGames performs an every-visit update algorithm using policy iteration"""
 
     def __init__(
-        self, p1_reward, isPrisoner, p1_start, p2_start, alpha=ALPHA, iterations=ITER
+        self,
+        p1_reward,
+        isPrisoner,
+        p1_start,
+        p2_start,
+        update_f,
+        alpha=ALPHA,
+        iterations=ITER,
     ):
         self.alpha = alpha
         self.iterations = iterations
+        self.update_f = update_f
 
         self.p1_reward = np.array(p1_reward)
 
@@ -30,11 +38,15 @@ class MultiplayerGames:
         self.p1_policy = np.array(p1_start)
         self.p2_policy = np.array(p2_start)
 
+        # Track expected values of the player policies
+        self.p1_e = np.array(p1_start)
+        self.p2_e = np.array(p2_start)
+
         # Store copies of the current
         self.p1_progress = [self.p1_policy.copy()]
         self.p2_progress = [self.p2_policy.copy()]
 
-    def play(self, update_f):
+    def play(self):
         for _ in range(self.iterations):
             # Choose action according to prob. dist.
             a1 = np.random.choice(self.num_actions_p1, p=self.p1_policy)
@@ -43,8 +55,17 @@ class MultiplayerGames:
             p1_reward = self.p1_reward[a1, a2]
             p2_reward = self.p2_reward[a1, a2]
 
-            self.p1_policy = update_f(self.alpha, self.p1_policy, a1, p1_reward)
-            self.p2_policy = update_f(self.alpha, self.p2_policy, a2, p2_reward)
+            # Update expected policies iteratively
+            if MultiplayerGames.is_expected_update(self.update_f):
+                self.p1_e = self.iterative_expected_update(self.p1_policy, self.p1_e)
+                self.p2_e = self.iterative_expected_update(self.p2_policy, self.p2_e)
+
+            self.p1_policy = self.update_f(
+                self.alpha, self.p1_policy, self.p1_e, a1, p1_reward
+            )
+            self.p2_policy = self.update_f(
+                self.alpha, self.p2_policy, self.p2_e, a2, p2_reward
+            )
 
             # Save progress for plotting
             self.p1_progress.append(self.p1_policy.copy())
@@ -88,16 +109,24 @@ class MultiplayerGames:
         plt.tight_layout()
         plt.show()
 
+    def iterative_expected_update(self, policy, expected_policy):
+        """Iteratively updates the expected values of the policy,
+        given the current policy"""
+        new_e = expected_policy.copy()
+        for i in range(len(policy)):
+            new_e[i] += self.alpha * (policy[i] - expected_policy[i])
+        return new_e
+
     @staticmethod
-    def basic_update(alpha, policy, action, reward):
+    def basic_update(alpha, policy, _, action, reward):
         updated_policy = policy.copy()
 
-        for a in range(len(policy)):
+        for i in range(len(policy)):
             # Update selected action separately from others
-            if a == action:
-                updated_policy[a] += alpha * reward * (1 - policy[a])
+            if i == action:
+                updated_policy[i] += alpha * reward * (1 - policy[i])
             else:
-                updated_policy[a] -= alpha * reward * policy[a]
+                updated_policy[i] -= alpha * reward * policy[i]
 
         # Keep the policy probabilities between 0 and 1, and normalize
         updated_policy = np.clip(updated_policy, 0, 1)
@@ -105,5 +134,26 @@ class MultiplayerGames:
         return updated_policy
 
     @staticmethod
-    def expected_update(alpha, policy, action, reward):
-        pass
+    def expected_update(alpha, policy, expected_policy, action, reward):
+        updated_policy = policy.copy()
+
+        for i in range(len(policy)):
+            # Calculate additional expression with expected policy value
+            expected_expression = alpha * (expected_policy[i] - policy[i])
+            if i == action:
+                # Update selected action separately from others
+                updated_policy[i] += (
+                    alpha * reward * (1 - policy[i]) + expected_expression
+                )
+
+            else:
+                updated_policy[i] -= alpha * reward * policy[i] + +expected_expression
+
+        # Keep the policy probabilities between 0 and 1, and normalize
+        updated_policy = np.clip(updated_policy, 0, 1)
+        updated_policy /= updated_policy.sum()
+        return updated_policy
+
+    @staticmethod
+    def is_expected_update(update_f):
+        return update_f.__name__ == "expected_update"

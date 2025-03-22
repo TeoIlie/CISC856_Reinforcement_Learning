@@ -53,8 +53,9 @@ def main():
                 True if game_name is PRISONER else False,
                 p1_start,
                 p2_start,
+                update_f,
             )
-            p1_final, p2_final, p1_value, p2_value = game.play(update_f)
+            p1_final, p2_final, p1_value, p2_value = game.play()
 
             # Printing final results
             print(f"\nStart policy {i+1}:")
