@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Hyperparams
 ALPHA = 0.01
 ITER = 10_000
 
+# Game types
 PRISONER = "Prisoner's dilemma"
 PENNIES = "Matching pennies"
 RPS = "Rock paper scissors"
@@ -35,32 +37,37 @@ games = {
 
 
 class MultiplayerGames:
-    def __init__(self, p1_reward, isPrisoner, alpha=ALPHA, iterations=ITER):
-        self.p1_reward = np.array(p1_reward)
-        self.num_actions_p1 = len(p1_reward)
-        self.num_actions_p2 = len(p1_reward[0])
+    """MultiplayerGames performs an every-visit update algorithm using policy iteration"""
 
-        if isPrisoner:
-            self.p2_reward = (
-                self.p1_reward.T
-            )  # Prisoner's dilemma reward for player 2 is transpose
-        else:
-            self.p2_reward = -self.p1_reward  # Other games are the negation
-
+    def __init__(
+        self, p1_reward, isPrisoner, p1_start, p2_start, alpha=ALPHA, iterations=ITER
+    ):
         self.alpha = alpha
         self.iterations = iterations
 
-    def initialize_policies(self, p1_init, p2_init):
-        self.p1 = np.array(p1_init)
-        self.p2 = np.array(p2_init)
+        self.p1_reward = np.array(p1_reward)
 
-        self.p1_progress = [self.p1.copy()]
-        self.p2_progress = [self.p2.copy()]
+        if isPrisoner:
+            # Prisoner's dilemma reward for player 2 is transpose
+            self.p2_reward = self.p1_reward.T
+        else:
+            # For other games, player 2 reward is the negation
+            self.p2_reward = -self.p1_reward
+
+        self.num_actions_p1 = len(p1_reward)
+        self.num_actions_p2 = len(p1_reward[0])
+
+        self.p1_policy = np.array(p1_start)
+        self.p2_policy = np.array(p2_start)
+
+        # Store copies of the current
+        self.p1_progress = [self.p1_policy.copy()]
+        self.p2_progress = [self.p2_policy.copy()]
 
     def update(self, policy, action, reward):
         updated_policy = policy.copy()
 
-        for a in range(self.num_actions_p1):
+        for a in range(len(policy)):
             # Update selected action separately from others
             if a == action:
                 updated_policy[a] += self.alpha * reward * (1 - policy[a])
@@ -73,30 +80,30 @@ class MultiplayerGames:
         return updated_policy
 
     def play(self):
-
         for _ in range(self.iterations):
             # Choose action according to prob. dist.
-            a1 = np.random.choice(self.num_actions_p1, p=self.p1)
-            a2 = np.random.choice(self.num_actions_p2, p=self.p2)
+            a1 = np.random.choice(self.num_actions_p1, p=self.p1_policy)
+            a2 = np.random.choice(self.num_actions_p2, p=self.p2_policy)
 
-            p1_reward, p2_reward = self.p1_reward[a1, a2], self.p2_reward[a1, a2]
+            p1_reward = self.p1_reward[a1, a2]
+            p2_reward = self.p2_reward[a1, a2]
 
-            self.p1 = self.update(self.p1, a1, p1_reward)
-            self.p2 = self.update(self.p2, a2, p2_reward)
+            self.p1_policy = self.update(self.p1_policy, a1, p1_reward)
+            self.p2_policy = self.update(self.p2_policy, a2, p2_reward)
 
             # Save progress for plotting
-            self.p1_progress.append(self.p1.copy())
-            self.p2_progress.append(self.p2.copy())
+            self.p1_progress.append(self.p1_policy.copy())
+            self.p2_progress.append(self.p2_policy.copy())
 
-        # Get total game value from player 1's perspective
+        # Get total game value from both players' perspective
         p1_value = 0
         p2_value = 0
         for i in range(self.num_actions_p1):
             for j in range(self.num_actions_p2):
-                p1_value += self.p1[i] * self.p2[j] * self.p1_reward[i, j]
-                p2_value += self.p1[i] * self.p2[j] * self.p2_reward[i, j]
+                p1_value += self.p1_policy[i] * self.p2_policy[j] * self.p1_reward[i, j]
+                p2_value += self.p1_policy[i] * self.p2_policy[j] * self.p2_reward[i, j]
 
-        return self.p1, self.p2, p1_value, p2_value
+        return self.p1_policy, self.p2_policy, p1_value, p2_value
 
     def plot_policies(self, title):
         p1_progress = np.array(self.p1_progress)
@@ -131,25 +138,24 @@ def main():
     for game_name, reward_matrix in games.items():
         print("\n", game_name)
 
-        for i, (p1_init, p2_init) in enumerate(start_policy[game_name]):
+        for i, (p1_start, p2_start) in enumerate(start_policy[game_name]):
 
-            if game_name == PRISONER:
-                isPrisoner = True
-            else:
-                isPrisoner = False
-
-            game = MultiplayerGames(reward_matrix, isPrisoner)
-            game.initialize_policies(p1_init, p2_init)
-            final_p1, final_p2, p1_value, p2_value = game.play()
+            game = MultiplayerGames(
+                reward_matrix,
+                True if game_name is PRISONER else False,
+                p1_start,
+                p2_start,
+            )
+            p1_final, p2_final, p1_value, p2_value = game.play()
 
             # Printing final results
             print(f"\nStart policy {i+1}:")
 
-            print(f"P1 Initial: {p1_init}")
-            print(f"P1 Final: {final_p1.round(4)}")
+            print(f"P1 Initial: {p1_start}")
+            print(f"P1 Final: {p1_final.round(4)}")
 
-            print(f"P2 Initial: {p2_init}")
-            print(f"P2 Final: {final_p2.round(4)}")
+            print(f"P2 Initial: {p2_start}")
+            print(f"P2 Final: {p2_final.round(4)}")
 
             print(f"P1 Value: {p1_value:.2f}")
             print(f"P2 Value: {p2_value:.2f}")
