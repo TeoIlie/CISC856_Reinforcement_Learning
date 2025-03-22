@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Hyperparams
-ALPHA = 0.001
-ITER = 10_000
+ALPHA = 1e-3
+ITER = 100_000
 
 
 class MultiplayerGames:
@@ -129,8 +129,7 @@ class MultiplayerGames:
                 updated_policy[i] -= alpha * reward * policy[i]
 
         # Keep the policy probabilities between 0 and 1, and normalize
-        updated_policy = np.clip(updated_policy, 0, 1)
-        updated_policy /= updated_policy.sum()
+        updated_policy = MultiplayerGames.clip_and_normalize(updated_policy)
         return updated_policy
 
     @staticmethod
@@ -150,10 +149,15 @@ class MultiplayerGames:
                 updated_policy[i] -= alpha * reward * policy[i] + +expected_expression
 
         # Keep the policy probabilities between 0 and 1, and normalize
-        updated_policy = np.clip(updated_policy, 0, 1)
-        updated_policy /= updated_policy.sum()
+        updated_policy = MultiplayerGames.clip_and_normalize(updated_policy)
         return updated_policy
 
     @staticmethod
     def is_expected_update(update_f):
         return update_f.__name__ == "expected_update"
+
+    @staticmethod
+    def clip_and_normalize(p):
+        p = np.clip(p, 0, 1)
+        p /= p.sum()
+        return p
