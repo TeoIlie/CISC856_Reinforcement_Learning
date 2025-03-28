@@ -144,9 +144,8 @@ class MultiplayerGames:
                 updated_policy[i] += (
                     alpha * reward * (1 - policy[i]) + expected_expression
                 )
-
             else:
-                updated_policy[i] -= alpha * reward * policy[i] + +expected_expression
+                updated_policy[i] += -alpha * reward * policy[i] + expected_expression
 
         # Keep the policy probabilities between 0 and 1, and normalize
         updated_policy = MultiplayerGames.clip_and_normalize(updated_policy)
